@@ -1,0 +1,985 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retro Typing Space Invaders</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #000;
+    color: #00ff66;
+    font-family: "Courier New", monospace;
+    text-align: center;
+}
+
+h1 {
+    margin: 15px 0 5px;
+    color: #00ff66;
+    text-shadow: 0 0 10px #00ff66;
+}
+
+.subtitle {
+    color: #00ccff;
+    margin-bottom: 10px;
+}
+
+#game {
+    position: relative;
+    width: 900px;
+    max-width: 95%;
+    height: 560px;
+    margin: auto;
+    overflow: hidden;
+
+    background:
+        radial-gradient(circle, #071522, #000 75%);
+
+    border: 3px solid #00ff66;
+
+    box-shadow:
+        0 0 10px #00ff66,
+        0 0 30px #00ff66,
+        inset 0 0 30px #003322;
+}
+
+/* Falling letter */
+
+.enemy {
+    position: absolute;
+
+    font-size: 42px;
+    font-weight: bold;
+
+    color: #ff3366;
+
+    text-shadow:
+        0 0 8px #ff3366,
+        0 0 20px #ff0033;
+
+    z-index: 5;
+}
+
+/* Player */
+
+.player {
+    position: absolute;
+
+    bottom: 15px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    font-size: 50px;
+
+    color: #00ccff;
+
+    text-shadow:
+        0 0 10px #00ccff,
+        0 0 25px #0088ff;
+}
+
+/* Explosion */
+
+.explosion {
+    position: absolute;
+
+    font-size: 40px;
+
+    color: yellow;
+
+    text-shadow:
+        0 0 10px yellow,
+        0 0 25px orange;
+
+    pointer-events: none;
+
+    animation: explode 0.4s linear forwards;
+}
+
+@keyframes explode {
+
+    0% {
+        transform: scale(0.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* HUD */
+
+.hud {
+    width: 900px;
+    max-width: 95%;
+
+    margin: 10px auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, 1fr);
+
+    gap: 8px;
+}
+
+.box {
+    padding: 8px;
+
+    background: #03100a;
+
+    border: 1px solid #00ff66;
+
+    box-shadow:
+        0 0 8px #00ff66;
+}
+
+.label {
+    display: block;
+
+    color: #00ccff;
+
+    font-size: 12px;
+}
+
+.value {
+    display: block;
+
+    color: #00ff66;
+
+    font-size: 22px;
+
+    font-weight: bold;
+}
+
+/* Input */
+
+#input {
+    margin-top: 10px;
+
+    width: 180px;
+
+    padding: 12px;
+
+    background: #000;
+
+    color: #00ff66;
+
+    border: 2px solid #00ff66;
+
+    outline: none;
+
+    text-align: center;
+
+    font-family: "Courier New", monospace;
+
+    font-size: 28px;
+
+    text-transform: uppercase;
+
+    box-shadow: 0 0 10px #00ff66;
+}
+
+#input:focus {
+    box-shadow:
+        0 0 15px #00ff66,
+        0 0 30px #00ff66;
+}
+
+/* Buttons */
+
+button {
+    margin: 8px 3px;
+
+    padding: 10px 20px;
+
+    background: #001a0c;
+
+    color: #00ff66;
+
+    border: 1px solid #00ff66;
+
+    font-family: "Courier New", monospace;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:hover {
+    background: #00ff66;
+    color: #000;
+
+    box-shadow: 0 0 15px #00ff66;
+}
+
+#message {
+    min-height: 25px;
+
+    color: #00ccff;
+
+    font-weight: bold;
+}
+
+/* Game over */
+
+#gameOver {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.9);
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 20;
+}
+
+#gameOver h2 {
+    color: #ff3366;
+
+    font-size: 45px;
+
+    text-shadow:
+        0 0 10px #ff3366,
+        0 0 25px #ff0033;
+}
+
+#gameOver p {
+    color: #00ff66;
+
+    font-size: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+
+    #game {
+        height: 500px;
+    }
+
+    .hud {
+        grid-template-columns:
+            repeat(3, 1fr);
+    }
+
+    .value {
+        font-size: 17px;
+    }
+
+    .enemy {
+        font-size: 32px;
+    }
+
+    h1 {
+        font-size: 25px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<h1>★ TYPING SPACE INVADERS ★</h1>
+
+<div class="subtitle">
+TYPE THE FALLING LETTERS
+</div>
+
+<div id="game">
+
+    <div class="player">
+        ▲
+    </div>
+
+    <div id="gameOver" class="hidden">
+
+        <h2>GAME OVER</h2>
+
+        <p id="finalScore">
+            SCORE: 0
+        </p>
+
+        <p id="finalAccuracy">
+            ACCURACY: 100%
+        </p>
+
+        <button onclick="startGame()">
+            PLAY AGAIN
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="hud">
+
+    <div class="box">
+        <span class="label">SCORE</span>
+        <span class="value" id="score">0</span>
+    </div>
+
+    <div class="box">
+        <span class="label">LIVES</span>
+        <span class="value" id="lives">3</span>
+    </div>
+
+    <div class="box">
+        <span class="label">LEVEL</span>
+        <span class="value" id="level">1</span>
+    </div>
+
+    <div class="box">
+        <span class="label">ACCURACY</span>
+        <span class="value" id="accuracy">100%</span>
+    </div>
+
+    <div class="box">
+        <span class="label">TIME</span>
+        <span class="value" id="time">5:00</span>
+    </div>
+
+</div>
+
+
+<input
+    id="input"
+    type="text"
+    maxlength="1"
+    autocomplete="off"
+    spellcheck="false"
+    disabled
+>
+
+
+<br>
+
+<button onclick="startGame()">
+    START
+</button>
+
+<button onclick="pauseGame()">
+    PAUSE
+</button>
+
+<button onclick="resetGame()">
+    RESET
+</button>
+
+<div id="message">
+    PRESS START TO BEGIN
+</div>
+
+
+<script>
+
+/* ==========================
+   VARIABLES
+========================== */
+
+var game = document.getElementById("game");
+
+var input = document.getElementById("input");
+
+var enemies = [];
+
+var score = 0;
+
+var lives = 3;
+
+var level = 1;
+
+var attempts = 0;
+
+var correct = 0;
+
+var time = 300;
+
+var running = false;
+
+var paused = false;
+
+var lastTime = 0;
+
+var spawnTimer = 0;
+
+var timerID = null;
+
+
+/* ==========================
+   START
+========================== */
+
+function startGame() {
+
+    resetObjects();
+
+    score = 0;
+
+    lives = 3;
+
+    level = 1;
+
+    attempts = 0;
+
+    correct = 0;
+
+    time = 300;
+
+    running = true;
+
+    paused = false;
+
+    spawnTimer = 0;
+
+    lastTime = performance.now();
+
+    document.getElementById("gameOver")
+        .classList.add("hidden");
+
+    input.disabled = false;
+
+    input.value = "";
+
+    input.focus();
+
+    updateHUD();
+
+    document.getElementById("message").innerHTML =
+        "GAME STARTED!";
+
+    clearInterval(timerID);
+
+    timerID = setInterval(function() {
+
+        if (!running) {
+            return;
+        }
+
+        if (paused) {
+            return;
+        }
+
+        time--;
+
+        updateHUD();
+
+        if (time <= 0) {
+            endGame();
+        }
+
+    }, 1000);
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+/* ==========================
+   GAME LOOP
+========================== */
+
+function gameLoop(currentTime) {
+
+    if (!running) {
+        return;
+    }
+
+    var delta =
+        currentTime - lastTime;
+
+    lastTime = currentTime;
+
+    if (!paused) {
+
+        spawnTimer += delta;
+
+        var spawnDelay =
+            Math.max(
+                350,
+                1200 - ((level - 1) * 100)
+            );
+
+        if (spawnTimer >= spawnDelay) {
+
+            spawnEnemy();
+
+            spawnTimer = 0;
+        }
+
+
+        var speed =
+            0.035 + (level * 0.008);
+
+
+        for (var i = enemies.length - 1;
+             i >= 0;
+             i--) {
+
+            var enemy = enemies[i];
+
+            enemy.y +=
+                speed * delta;
+
+            enemy.element.style.top =
+                enemy.y + "px";
+
+
+            if (
+                enemy.y >
+                game.clientHeight - 90
+            ) {
+
+                enemy.element.remove();
+
+                enemies.splice(i, 1);
+
+                lives--;
+
+                updateHUD();
+
+                document.getElementById("message")
+                    .innerHTML =
+                    "⚠ INVADER ESCAPED!";
+
+
+                if (lives <= 0) {
+
+                    endGame();
+
+                    return;
+                }
+            }
+        }
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+/* ==========================
+   CREATE ENEMY
+========================== */
+
+function spawnEnemy() {
+
+    var alphabet =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    var letter =
+        alphabet[
+            Math.floor(
+                Math.random() * 26
+            )
+        ];
+
+
+    var enemyElement =
+        document.createElement("div");
+
+    enemyElement.className =
+        "enemy";
+
+    enemyElement.innerHTML =
+        letter;
+
+
+    var x =
+        Math.random() *
+        (game.clientWidth - 60);
+
+
+    enemyElement.style.left =
+        x + "px";
+
+    enemyElement.style.top =
+        "-50px";
+
+
+    game.appendChild(
+        enemyElement
+    );
+
+
+    enemies.push({
+
+        letter: letter,
+
+        x: x,
+
+        y: -50,
+
+        element: enemyElement
+    });
+}
+
+
+/* ==========================
+   KEYBOARD INPUT
+========================== */
+
+input.addEventListener(
+    "input",
+    function() {
+
+        if (!running || paused) {
+            return;
+        }
+
+        var typed =
+            input.value.toUpperCase();
+
+
+        if (typed.length !== 1) {
+            return;
+        }
+
+
+        attempts++;
+
+
+        var found = false;
+
+
+        /*
+            Search for matching
+            falling letter.
+        */
+
+        for (
+            var i = 0;
+            i < enemies.length;
+            i++
+        ) {
+
+            if (
+                enemies[i].letter === typed
+            ) {
+
+                destroyEnemy(i);
+
+                correct++;
+
+                score += 10;
+
+                found = true;
+
+                break;
+            }
+        }
+
+
+        if (found) {
+
+            document.getElementById("message")
+                .innerHTML =
+                "✓ HIT +10";
+
+        } else {
+
+            document.getElementById("message")
+                .innerHTML =
+                "✗ MISS";
+        }
+
+
+        updateLevel();
+
+        updateHUD();
+
+        input.value = "";
+
+    }
+);
+
+
+/* ==========================
+   DESTROY ENEMY
+========================== */
+
+function destroyEnemy(index) {
+
+    var enemy =
+        enemies[index];
+
+
+    var explosion =
+        document.createElement("div");
+
+    explosion.className =
+        "explosion";
+
+    explosion.innerHTML =
+        "✦";
+
+
+    explosion.style.left =
+        enemy.x + "px";
+
+    explosion.style.top =
+        enemy.y + "px";
+
+
+    game.appendChild(
+        explosion
+    );
+
+
+    setTimeout(function() {
+
+        explosion.remove();
+
+    }, 400);
+
+
+    enemy.element.remove();
+
+    enemies.splice(index, 1);
+}
+
+
+/* ==========================
+   LEVEL
+========================== */
+
+function updateLevel() {
+
+    level =
+        Math.floor(score / 100) + 1;
+}
+
+
+/* ==========================
+   HUD
+========================== */
+
+function updateHUD() {
+
+    document.getElementById("score")
+        .innerHTML =
+        score;
+
+
+    document.getElementById("lives")
+        .innerHTML =
+        lives;
+
+
+    document.getElementById("level")
+        .innerHTML =
+        level;
+
+
+    var accuracy = 100;
+
+
+    if (attempts > 0) {
+
+        accuracy =
+            Math.round(
+                (correct / attempts) * 100
+            );
+    }
+
+
+    document.getElementById("accuracy")
+        .innerHTML =
+        accuracy + "%";
+
+
+    var minutes =
+        Math.floor(time / 60);
+
+
+    var seconds =
+        time % 60;
+
+
+    if (seconds < 10) {
+
+        seconds =
+            "0" + seconds;
+    }
+
+
+    document.getElementById("time")
+        .innerHTML =
+        minutes + ":" + seconds;
+}
+
+
+/* ==========================
+   PAUSE
+========================== */
+
+function pauseGame() {
+
+    if (!running) {
+        return;
+    }
+
+
+    paused =
+        !paused;
+
+
+    if (paused) {
+
+        document.getElementById("message")
+            .innerHTML =
+            "Ⅱ PAUSED";
+
+    } else {
+
+        document.getElementById("message")
+            .innerHTML =
+            "▶ RESUMED";
+
+        input.focus();
+
+        lastTime =
+            performance.now();
+    }
+}
+
+
+/* ==========================
+   GAME OVER
+========================== */
+
+function endGame() {
+
+    running = false;
+
+    paused = false;
+
+    clearInterval(timerID);
+
+    input.disabled = true;
+
+
+    var accuracy = 100;
+
+
+    if (attempts > 0) {
+
+        accuracy =
+            Math.round(
+                (correct / attempts) * 100
+            );
+    }
+
+
+    document.getElementById("finalScore")
+        .innerHTML =
+        "SCORE: " + score;
+
+
+    document.getElementById("finalAccuracy")
+        .innerHTML =
+        "ACCURACY: " +
+        accuracy + "%";
+
+
+    document.getElementById("gameOver")
+        .classList.remove("hidden");
+
+
+    document.getElementById("message")
+        .innerHTML =
+        "GAME OVER";
+}
+
+
+/* ==========================
+   RESET
+========================== */
+
+function resetGame() {
+
+    running = false;
+
+    paused = false;
+
+    clearInterval(timerID);
+
+    resetObjects();
+
+
+    score = 0;
+
+    lives = 3;
+
+    level = 1;
+
+    attempts = 0;
+
+    correct = 0;
+
+    time = 300;
+
+
+    input.value = "";
+
+    input.disabled = true;
+
+
+    document.getElementById("gameOver")
+        .classList.add("hidden");
+
+
+    document.getElementById("message")
+        .innerHTML =
+        "PRESS START TO BEGIN";
+
+
+    updateHUD();
+}
+
+
+/* ==========================
+   REMOVE ENEMIES
+========================== */
+
+function resetObjects() {
+
+    for (
+        var i = 0;
+        i < enemies.length;
+        i++
+    ) {
+
+        enemies[i].element.remove();
+    }
+
+    enemies = [];
+}
+
+</script>
+
+</body>
+</html>
